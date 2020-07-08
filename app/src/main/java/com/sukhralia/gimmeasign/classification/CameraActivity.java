@@ -43,6 +43,7 @@ import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -95,7 +96,8 @@ public abstract class CameraActivity extends AppCompatActivity
       recognitionValueTextView,
       recognition1ValueTextView,
       recognition2ValueTextView,
-      translatedValueTextView;
+      translatedValueTextView,
+      accuracyTextView;
   protected TextView frameValueTextView,
       cropValueTextView,
       cameraResolutionTextView,
@@ -113,6 +115,7 @@ public abstract class CameraActivity extends AppCompatActivity
   private int numThreads = -1;
   Boolean isInit = true;
   private Recognition lastObservedRecognition;
+  private SeekBar accuracyMeter;
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
@@ -139,6 +142,8 @@ public abstract class CameraActivity extends AppCompatActivity
     bottomSheetArrowImageView = findViewById(R.id.bottom_sheet_arrow);
     devSectionLayout = findViewById(R.id.dev_section);
     devBorder = findViewById(R.id.dev_border);
+    accuracyMeter = findViewById(R.id.accuracy_meter);
+    accuracyTextView = findViewById(R.id.accuracy_value);
 
     if(AppSharedPreferences.INSTANCE.getUserMode()){
       devSectionLayout.setVisibility(View.VISIBLE);
@@ -147,6 +152,27 @@ public abstract class CameraActivity extends AppCompatActivity
       devSectionLayout.setVisibility(View.GONE);
       devBorder.setVisibility(View.GONE);
     }
+
+    accuracyMeter.setMax(100);
+    accuracyMeter.setProgress(AppSharedPreferences.INSTANCE.getAccuracy());
+    accuracyTextView.setText((Integer.toString(AppSharedPreferences.INSTANCE.getAccuracy()) + "%"));
+
+    accuracyMeter.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+      int progressChangedValue = 0;
+
+      public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        progressChangedValue = progress;
+      }
+
+      public void onStartTrackingTouch(SeekBar seekBar) {
+        // TODO Auto-generated method stub
+      }
+
+      public void onStopTrackingTouch(SeekBar seekBar) {
+        saveAccuracy(progressChangedValue);
+      }
+    });
+
     ViewTreeObserver vto = gestureLayout.getViewTreeObserver();
     vto.addOnGlobalLayoutListener(
         new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -222,6 +248,12 @@ public abstract class CameraActivity extends AppCompatActivity
   protected int[] getRgbBytes() {
     imageConverter.run();
     return rgbBytes;
+  }
+
+  private void saveAccuracy(int progress){
+    Toast.makeText(this,"Accuracy set at " + Integer.toString(progress),Toast.LENGTH_SHORT);
+    AppSharedPreferences.INSTANCE.setAccuracy(progress);
+    accuracyTextView.setText((Integer.toString(progress) + "%"));
   }
 
   protected int getLuminanceStride() {
@@ -576,17 +608,19 @@ public abstract class CameraActivity extends AppCompatActivity
   }
 
   protected void setTranslatedText(Recognition result){
+    int accuracy = Math.round((result.getConfidence()*100));
 
-    if(lastObservedRecognition!=null) {
-      if(!lastObservedRecognition.getTitle().equals(result.getTitle())) {
-        translatedValueTextView.append(result.getTitle());
+    if(accuracy >AppSharedPreferences.INSTANCE.getAccuracy()) {
+      if (lastObservedRecognition != null) {
+        if (!lastObservedRecognition.getTitle().equals(result.getTitle())) {
+          translatedValueTextView.append(result.getTitle());
+        }
+      } else {
+        translatedValueTextView.setText(result.getTitle());
       }
-    }else{
-      translatedValueTextView.setText(result.getTitle());
+
+      lastObservedRecognition = result;
     }
-
-    lastObservedRecognition = result;
-
   }
 
   protected void showFrameInfo(String frameInfo) {
