@@ -23,8 +23,12 @@ import android.media.ImageReader.OnImageAvailableListener;
 import android.os.SystemClock;
 import android.util.Size;
 import android.util.TypedValue;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.sukhralia.gimmeasign.AppSharedPreferences;
 import com.sukhralia.gimmeasign.classification.env.BorderedText;
 import com.sukhralia.gimmeasign.classification.env.Logger;
 import com.sukhralia.gimmeasign.classification.tflite.Classifier;
@@ -44,6 +48,8 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
   private Integer sensorOrientation;
   private Classifier classifier;
   private BorderedText borderedText;
+  private Button clearText;
+  private TextView translatedValueTextView;
   /** Input image size of the model along x axis. */
   private int imageSizeX;
   /** Input image size of the model along y axis. */
@@ -81,6 +87,17 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
 
     LOGGER.i("Initializing at size %dx%d", previewWidth, previewHeight);
     rgbFrameBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Config.ARGB_8888);
+
+    clearText = findViewById(R.id.clear);
+    translatedValueTextView = findViewById(R.id.translated_text);
+
+    clearText.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view)
+      {
+        translatedValueTextView.setText("");
+      }
+    });
   }
 
   @Override

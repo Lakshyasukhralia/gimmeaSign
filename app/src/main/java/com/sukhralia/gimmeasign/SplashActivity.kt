@@ -46,14 +46,13 @@ class SplashActivity : AppCompatActivity() {
     fun changeImage() {
         Handler().postDelayed({
             if (i == len) {
-                startActivity(Intent(this@SplashActivity, ClassifierActivity::class.java))
+                startActivity(Intent(this@SplashActivity, MainActivity::class.java))
                 finish()
             } else {
                 binding.logo.background = VectorDrawableCompat.create(resources, list[i], null)
                 i++
                 changeImage()
             }
-
 
         }, 350)
     }

@@ -19,6 +19,7 @@ package com.sukhralia.gimmeasign.classification;
 import android.Manifest;
 import android.app.Fragment;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
@@ -51,6 +52,7 @@ import androidx.annotation.UiThread;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.sukhralia.gimmeasign.AppSharedPreferences;
 import com.sukhralia.gimmeasign.R;
 
 import com.sukhralia.gimmeasign.classification.env.ImageUtils;
@@ -84,6 +86,7 @@ public abstract class CameraActivity extends AppCompatActivity
   private Runnable postInferenceCallback;
   private Runnable imageConverter;
   private LinearLayout bottomSheetLayout;
+  private LinearLayout devSectionLayout;
   private LinearLayout gestureLayout;
   private BottomSheetBehavior<LinearLayout> sheetBehavior;
   protected TextView recognitionTextView,
@@ -91,7 +94,8 @@ public abstract class CameraActivity extends AppCompatActivity
       recognition2TextView,
       recognitionValueTextView,
       recognition1ValueTextView,
-      recognition2ValueTextView;
+      recognition2ValueTextView,
+      translatedValueTextView;
   protected TextView frameValueTextView,
       cropValueTextView,
       cameraResolutionTextView,
@@ -102,11 +106,13 @@ public abstract class CameraActivity extends AppCompatActivity
   private Spinner modelSpinner;
   private Spinner deviceSpinner;
   private TextView threadsTextView;
+  private View devBorder;
 
   private Model model = Model.FLOAT_MOBILENET;
   private Device device = Device.CPU;
   private int numThreads = -1;
   Boolean isInit = true;
+  private Recognition lastObservedRecognition;
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
@@ -131,7 +137,16 @@ public abstract class CameraActivity extends AppCompatActivity
     gestureLayout = findViewById(R.id.gesture_layout);
     sheetBehavior = BottomSheetBehavior.from(bottomSheetLayout);
     bottomSheetArrowImageView = findViewById(R.id.bottom_sheet_arrow);
+    devSectionLayout = findViewById(R.id.dev_section);
+    devBorder = findViewById(R.id.dev_border);
 
+    if(AppSharedPreferences.INSTANCE.getUserMode()){
+      devSectionLayout.setVisibility(View.VISIBLE);
+      devBorder.setVisibility(View.VISIBLE);
+    }else{
+      devSectionLayout.setVisibility(View.GONE);
+      devBorder.setVisibility(View.GONE);
+    }
     ViewTreeObserver vto = gestureLayout.getViewTreeObserver();
     vto.addOnGlobalLayoutListener(
         new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -185,6 +200,7 @@ public abstract class CameraActivity extends AppCompatActivity
     recognition1ValueTextView = findViewById(R.id.detected_item1_value);
     recognition2TextView = findViewById(R.id.detected_item2);
     recognition2ValueTextView = findViewById(R.id.detected_item2_value);
+    translatedValueTextView = findViewById(R.id.translated_text);
 
     frameValueTextView = findViewById(R.id.frame_info);
     cropValueTextView = findViewById(R.id.crop_info);
@@ -528,7 +544,11 @@ public abstract class CameraActivity extends AppCompatActivity
 
   @UiThread
   protected void showResultsInBottomSheet(List<Recognition> results) {
+
     if (results != null && results.size() >= 3) {
+
+      setTranslatedText(results.get(0));
+
       Recognition recognition = results.get(0);
       if (recognition != null) {
         if (recognition.getTitle() != null) recognitionTextView.setText(recognition.getTitle());
@@ -553,6 +573,20 @@ public abstract class CameraActivity extends AppCompatActivity
               String.format("%.2f", (100 * recognition2.getConfidence())) + "%");
       }
     }
+  }
+
+  protected void setTranslatedText(Recognition result){
+
+    if(lastObservedRecognition!=null) {
+      if(!lastObservedRecognition.getTitle().equals(result.getTitle())) {
+        translatedValueTextView.append(result.getTitle());
+      }
+    }else{
+      translatedValueTextView.setText(result.getTitle());
+    }
+
+    lastObservedRecognition = result;
+
   }
 
   protected void showFrameInfo(String frameInfo) {
