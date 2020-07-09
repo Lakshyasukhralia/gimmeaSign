@@ -51,8 +51,10 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.snackbar.Snackbar;
 import com.sukhralia.gimmeasign.AppSharedPreferences;
 import com.sukhralia.gimmeasign.R;
 
@@ -88,6 +90,7 @@ public abstract class CameraActivity extends AppCompatActivity
   private Runnable imageConverter;
   private LinearLayout bottomSheetLayout;
   private LinearLayout devSectionLayout;
+  private CoordinatorLayout coordinatorLayout;
   private LinearLayout gestureLayout;
   private BottomSheetBehavior<LinearLayout> sheetBehavior;
   protected TextView recognitionTextView,
@@ -97,7 +100,8 @@ public abstract class CameraActivity extends AppCompatActivity
       recognition1ValueTextView,
       recognition2ValueTextView,
       translatedValueTextView,
-      accuracyTextView;
+      accuracyTextView,
+      predictedAlphabetTextView;
   protected TextView frameValueTextView,
       cropValueTextView,
       cameraResolutionTextView,
@@ -144,6 +148,8 @@ public abstract class CameraActivity extends AppCompatActivity
     devBorder = findViewById(R.id.dev_border);
     accuracyMeter = findViewById(R.id.accuracy_meter);
     accuracyTextView = findViewById(R.id.accuracy_value);
+    predictedAlphabetTextView = findViewById(R.id.predicted_alphabet_overlay);
+    coordinatorLayout = findViewById(R.id.coordinatorLayout);
 
     if(AppSharedPreferences.INSTANCE.getUserMode()){
       devSectionLayout.setVisibility(View.VISIBLE);
@@ -234,6 +240,8 @@ public abstract class CameraActivity extends AppCompatActivity
     rotationTextView = findViewById(R.id.rotation_info);
     inferenceTimeTextView = findViewById(R.id.inference_info);
 
+    translatedValueTextView.setOnClickListener(this);
+
     modelSpinner.setOnItemSelectedListener(this);
     deviceSpinner.setOnItemSelectedListener(this);
 
@@ -244,6 +252,8 @@ public abstract class CameraActivity extends AppCompatActivity
     device = Device.valueOf(deviceSpinner.getSelectedItem().toString());
     numThreads = Integer.parseInt(threadsTextView.getText().toString().trim());
   }
+
+
 
   protected int[] getRgbBytes() {
     imageConverter.run();
@@ -609,6 +619,7 @@ public abstract class CameraActivity extends AppCompatActivity
 
   protected void setTranslatedText(Recognition result){
     int accuracy = Math.round((result.getConfidence()*100));
+    predictedAlphabetTextView.setText(result.getTitle());
 
     if(accuracy >AppSharedPreferences.INSTANCE.getAccuracy()) {
       if (lastObservedRecognition != null) {
@@ -709,6 +720,19 @@ public abstract class CameraActivity extends AppCompatActivity
       }
       setNumThreads(--numThreads);
       threadsTextView.setText(String.valueOf(numThreads));
+    }else if(v.getId() == R.id.translated_text){
+      android.content.ClipboardManager clipboard = (android.content.ClipboardManager) this.getSystemService(Context.CLIPBOARD_SERVICE);
+      android.content.ClipData clip = android.content.ClipData.newPlainText("Copied Text", translatedValueTextView.getText());
+      clipboard.setPrimaryClip(clip);
+      Snackbar.make(coordinatorLayout, "Text copied", Snackbar.LENGTH_LONG)
+              .setAction("CLOSE", new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+
+                }
+              })
+              .setActionTextColor(getResources().getColor(android.R.color.holo_red_light ))
+              .show();
     }
   }
 

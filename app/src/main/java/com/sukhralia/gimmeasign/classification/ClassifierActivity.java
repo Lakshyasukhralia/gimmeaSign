@@ -49,6 +49,7 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
   private Classifier classifier;
   private BorderedText borderedText;
   private Button clearText;
+  private Button copyText;
   private TextView translatedValueTextView;
   /** Input image size of the model along x axis. */
   private int imageSizeX;
@@ -89,6 +90,7 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
     rgbFrameBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Config.ARGB_8888);
 
     clearText = findViewById(R.id.clear);
+    copyText = findViewById(R.id.copy);
     translatedValueTextView = findViewById(R.id.translated_text);
 
     clearText.setOnClickListener(new View.OnClickListener() {
@@ -96,6 +98,14 @@ public class ClassifierActivity extends CameraActivity implements OnImageAvailab
       public void onClick(View view)
       {
         translatedValueTextView.setText("");
+      }
+    });
+
+    copyText.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View view)
+      {
+        //TODO
       }
     });
   }
